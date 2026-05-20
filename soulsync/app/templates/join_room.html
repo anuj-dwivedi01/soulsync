@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="join-container" style="max-width: 500px; margin: 0 auto;">
+    <h2 class="section-title">Join Connection</h2>
+    <p class="section-subtitle mb-8">Enter your name and the 6-digit code your partner shared with you.</p>
+
+    <form action="{{ url_for('main.join_room_post') }}" method="POST" class="setup-form">
+        <div class="input-group">
+            <label for="user_name">Your Name</label>
+            <input type="text" id="user_name" name="user_name" required placeholder="Enter your name..." autocomplete="off">
+        </div>
+        <div class="input-group">
+            <label>Select Your Soul Aura (Avatar)</label>
+            <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                <label style="cursor: pointer;">
+                    <input type="radio" name="aura" value="purple" checked style="display: none;">
+                    <div class="aura-circle" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #c084fc, #8b5cf6); border: 2px solid transparent;"></div>
+                </label>
+                <label style="cursor: pointer;">
+                    <input type="radio" name="aura" value="emerald" style="display: none;">
+                    <div class="aura-circle" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #34d399, #10b981); border: 2px solid transparent;"></div>
+                </label>
+                <label style="cursor: pointer;">
+                    <input type="radio" name="aura" value="rose" style="display: none;">
+                    <div class="aura-circle" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #fb7185, #f43f5e); border: 2px solid transparent;"></div>
+                </label>
+                <label style="cursor: pointer;">
+                    <input type="radio" name="aura" value="cyan" style="display: none;">
+                    <div class="aura-circle" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #22d3ee, #06b6d4); border: 2px solid transparent;"></div>
+                </label>
+            </div>
+            <style>
+                /* Highlight the selected aura */
+                input[type="radio"]:checked + .aura-circle {
+                    border: 2px solid white;
+                    box-shadow: 0 0 15px rgba(255,255,255,0.5);
+                }
+            </style>
+        </div>
+        
+        <div class="input-group">
+            <label for="room_code">Room Code</label>
+            <input type="text" id="room_code" name="room_code" required placeholder="e.g. A1B2C3" style="text-transform: uppercase;" maxlength="6" autocomplete="off">
+        </div>
+
+        <button type="submit" class="btn-primary mt-4" style="width: 100%;">Connect to Partner</button>
+    </form>
+</div>
+{% endblock %}

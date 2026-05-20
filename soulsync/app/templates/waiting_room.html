@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="waiting-container">
+    <div class="glass-panel text-center p-5 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md">
+        <h2 class="text-2xl font-bold mb-2">Waiting for partner...</h2>
+        <p class="text-gray-400 mb-6">Share this code with your partner so they can join.</p>
+        
+        <div class="room-code-display mb-8">
+            <span class="text-5xl font-black tracking-widest text-purple-400" id="roomCode">
+                {{ room.room_code }}
+            </span>
+        </div>
+
+        <div class="loader-animation mb-4">
+            <div style="width: 20px; height: 20px; background: var(--color-purple); border-radius: 50%; margin: 0 auto; animation: pulse 1.5s infinite;"></div>
+        </div>
+        
+        <p class="text-sm text-gray-500" id="statusText">Listening for connection...</p>
+    </div>
+</div>
+
+<style>
+    @keyframes pulse {
+        0% { transform: scale(0.8); opacity: 0.5; }
+        50% { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(0.8); opacity: 0.5; }
+    }
+</style>
+
+<script>
+    // Initialize Socket.IO connection
+    const socket = io();
+    const roomCode = "{{ room.room_code }}";
+    
+    // We need the user's ID to sync them in the backend. 
+    // We will grab it from the URL or session in a later step, 
+    // but for now, we just pass the room code.
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('user_id');
+
+    socket.on('connect', () => {
+        console.log('Connected to real-time server!');
+        // Tell the server we arrived
+        socket.emit('join_waiting_room', {
+            room_code: roomCode,
+            user_id: userId
+        });
+    });
+
+    // Listen for the server telling us the partner joined
+    socket.on('session_ready', (data) => {
+        document.getElementById('statusText').innerText = data.message;
+        document.getElementById('statusText').style.color = "var(--color-emerald)";
+        
+        // Wait 1.5 seconds for a smooth transition, then redirect to the live quiz
+        setTimeout(() => {
+            window.location.href = `/session/${roomCode}?user_id=${userId}`; 
+        }, 1500);
+    });
+</script>
+{% endblock %}

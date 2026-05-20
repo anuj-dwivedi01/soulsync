@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero-section" style="text-align: center;">
+    <div class="logo-container" style="margin-bottom: 2rem;">
+        
+        <a href="/" style="text-decoration: none; display: inline-block;">
+            <h1 style="
+                font-size: 5rem; 
+                font-weight: 900; 
+                letter-spacing: 2px; 
+                margin: 0;
+                background: linear-gradient(135deg, #c084fc, #8b5cf6); 
+                -webkit-background-clip: text; 
+                background-clip: text; 
+                -webkit-text-fill-color: transparent;">
+                SoulSync
+            </h1>
+        </a>
+        
+        <p class="tagline" style="margin-top: 1rem;">"Not just compatibility. Understanding."</p>
+    </div>
+    
+    <div class="hero-actions" style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ url_for('main.mode_selection') }}" class="btn-primary glow-effect">
+            Start Connection Test
+        </a>
+        
+        <a href="{{ url_for('main.join_room_page') }}" class="btn-primary" style="background: transparent; border: 1px solid var(--color-purple);">
+            Join with Code
+        </a>
+    </div>
+    <p class="sub-text mt-4" style="color: #a1a1aa;">For couples, friends, and complex dynamics.</p>
+</div>
+{% endblock %}

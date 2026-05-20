@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="session-container" style="max-width: 700px; margin: 0 auto; width: 100%;">
+    
+    <div id="roundBanner" style="padding: 0.6rem; border-radius: 30px; margin-bottom: 1.5rem; font-size: 0.85rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; display: none; transition: all 0.4s ease;">
+        </div>
+
+    <div class="top-bar" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-bottom: 2rem; color: #a1a1aa;">
+        <span id="progressText" style="font-weight: 600; letter-spacing: 1px; text-align: left;">Loading...</span>
+        
+        <div id="timerContainer" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.03); padding: 0.4rem 1rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+            <span style="font-size: 0.85rem; color: #71717a;">TIME REMAINING:</span>
+            <span id="timerText" style="font-weight: 800; font-family: monospace; font-size: 1.2rem; color: var(--color-purple);">15</span>
+        </div>
+
+        <div class="sync-indicator" style="display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end;">
+            <div style="width: 10px; height: 10px; background: var(--color-emerald); border-radius: 50%; box-shadow: 0 0 10px var(--color-emerald);"></div>
+            <span style="font-size: 0.9rem;">Live Sync</span>
+        </div>
+    </div>
+
+    <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 10px; margin-bottom: 2rem; overflow: hidden;">
+        <div id="timerBar" style="width: 100%; height: 100%; background: var(--color-purple); transition: width 1s linear;"></div>
+    </div>
+
+    <div class="glass-panel" id="questionCard" style="padding: 3rem 2rem; border-radius: 20px; border: 1px solid var(--glass-border); background: var(--glass-bg); backdrop-filter: blur(12px); text-align: center; opacity: 0; transform: translateY(10px);">
+        
+        <h2 id="questionText" style="font-size: 1.8rem; font-weight: 600; margin-bottom: 2.5rem; line-height: 1.4;">
+            Waiting for partner to sync...
+        </h2>
+
+        <div id="optionsContainer" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+    </div>
+    
+    <p id="waitingStatus" style="text-align: center; margin-top: 2rem; color: var(--color-purple); display: none; font-weight: 500;">
+        Waiting for partner to answer...
+    </p>
+</div>
+
+<script>
+    const socket = io();
+    const roomCode = "{{ room.room_code }}";
+    const userId = "{{ user_id }}";
+    
+    let currentQuestionId = null;
+    let countdownInterval = null;
+    let timeLeft = 15;
+    const ROUND_DURATION = 15; // Set to 15 seconds per specification
+
+    socket.on('connect', () => {
+        socket.emit('request_question', { room_code: roomCode, user_id: userId });
+    });
+
+    socket.on('new_question', (data) => {
+        currentQuestionId = data.question_id;
+        clearInterval(countdownInterval); // Clear any lingering timers
+        
+        // 1. Update Progress Tracker Text
+        document.getElementById('progressText').innerText = `QUESTION ${data.current_index} / ${data.total_questions}`;
+        document.getElementById('questionText').innerText = data.question_text;
+        document.getElementById('waitingStatus').style.display = 'none';
+        
+        // 2. Handle Dynamic Round Atmosphere Shift
+        const banner = document.getElementById('roundBanner');
+        if (data.question_type === 'prediction') {
+            banner.style.display = 'block';
+            banner.innerText = "🔮 PREDICTION ROUND: Predict your partner's actual behavior!";
+            banner.style.background = "rgba(139, 92, 246, 0.15)";
+            banner.style.color = "var(--color-purple)";
+            banner.style.border = "1px solid rgba(139, 92, 246, 0.3)";
+        } else {
+            banner.style.display = 'block';
+            banner.innerText = "⚡ ALIGNMENT ROUND: Answer honestly based on your values.";
+            banner.style.background = "rgba(6, 182, 212, 0.15)";
+            banner.style.color = "var(--color-cyan)";
+            banner.style.border = "1px solid rgba(6, 182, 212, 0.3)";
+        }
+
+        // 3. Populate Options Buttons
+        const container = document.getElementById('optionsContainer');
+        container.innerHTML = '';
+        data.options.forEach((opt) => {
+            const btn = document.createElement('button');
+            btn.innerText = opt;
+            btn.className = "option-btn";
+            btn.style.cssText = `
+                width: 100%; padding: 1.2rem; background: rgba(255,255,255,0.04); 
+                border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; 
+                color: white; font-size: 1.1rem; cursor: pointer; transition: all 0.2s ease;
+                text-align: left;
+            `;
+            btn.onmouseover = () => btn.style.background = "rgba(255,255,255,0.08)";
+            btn.onmouseout = () => btn.style.background = "rgba(255,255,255,0.04)";
+            btn.onclick = () => selectOption(btn, opt);
+            container.appendChild(btn);
+        });
+
+        // 4. Initialize Synchronized Timer
+        timeLeft = ROUND_DURATION;
+        updateTimerUI();
+        countdownInterval = setInterval(() => {
+            timeLeft--;
+            updateTimerUI();
+            if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+                handleTimeout(); // Force process timeout execution
+            }
+        }, 1000);
+
+        gsap.to("#questionCard", { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" });
+    });
+
+    function updateTimerUI() {
+        document.getElementById('timerText').innerText = timeLeft;
+        const percentage = (timeLeft / ROUND_DURATION) * 100;
+        const bar = document.getElementById('timerBar');
+        bar.style.width = `${percentage}%`;
+        
+        // Visual warning: change color to rose when running out of time
+        if (timeLeft <= 5) {
+            document.getElementById('timerText').style.color = "var(--color-rose)";
+            bar.style.background = "var(--color-rose)";
+        } else {
+            document.getElementById('timerText').style.color = "var(--color-purple)";
+            bar.style.background = "var(--color-purple)";
+        }
+    }
+
+    function selectOption(clickedBtn, selectedAnswer) {
+        clearInterval(countdownInterval); // Stop timer immediately on interaction
+        lockAllButtons();
+
+        if (clickedBtn) {
+            clickedBtn.style.opacity = "1";
+            clickedBtn.style.border = "1px solid var(--color-purple)";
+            clickedBtn.style.background = "rgba(139, 92, 246, 0.2)";
+        }
+
+        document.getElementById('waitingStatus').style.display = 'block';
+        document.getElementById('waitingStatus').innerText = "Answer locked. Waiting for partner...";
+        document.getElementById('waitingStatus').style.color = "var(--color-purple)";
+
+        socket.emit('submit_answer', {
+            room_code: roomCode,
+            user_id: userId,
+            question_id: currentQuestionId,
+            answer: selectedAnswer
+        });
+    }
+
+    function handleTimeout() {
+        lockAllButtons();
+        document.getElementById('waitingStatus').style.display = 'block';
+        document.getElementById('waitingStatus').innerText = "⏱️ Time expired! Auto-submitting null baseline...";
+        document.getElementById('waitingStatus').style.color = "var(--color-rose)";
+
+        socket.emit('submit_answer', {
+            room_code: roomCode,
+            user_id: userId,
+            question_id: currentQuestionId,
+            answer: "TIMEOUT"
+        });
+    }
+
+    function lockAllButtons() {
+        const buttons = document.querySelectorAll('.option-btn');
+        buttons.forEach(b => {
+            b.disabled = true;
+            b.style.opacity = "0.4";
+            b.style.cursor = "not-allowed";
+        });
+    }
+
+    socket.on('round_complete', () => {
+        document.getElementById('waitingStatus').innerText = "Both locked in! Syncing data matrix...";
+        document.getElementById('waitingStatus').style.color = "var(--color-emerald)";
+        setTimeout(() => {
+            socket.emit('request_question', { room_code: roomCode, user_id: userId });
+        }, 1500);
+    });
+
+    socket.on('test_complete', (data) => {
+        clearInterval(countdownInterval);
+        document.getElementById('questionCard').innerHTML = `<h2 style="color: var(--color-emerald); font-size: 2rem;">${data.message}</h2><p style='margin-top:1rem;color:#a1a1aa;'>Compiling psychological report...</p>`;
+        setTimeout(() => {
+            window.location.href = `/results/${roomCode}?user_id=${userId}`;
+        }, 2000);
+    });
+</script>
+{% endblock %}

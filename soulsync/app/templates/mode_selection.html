@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mode-selection-container">
+    <h2 class="section-title">Select Your Dynamic</h2>
+    <p class="section-subtitle">Choose the relationship mode that best fits your connection.</p>
+
+    <form action="{{ url_for('main.create_room') }}" method="POST" class="setup-form">
+        <div class="input-group">
+            <label for="user_name">Your Name</label>
+            <input type="text" id="user_name" name="user_name" required placeholder="Enter your name..." autocomplete="off">
+        </div>
+        <div class="input-group">
+            <label>Select Your Soul Aura (Avatar)</label>
+            <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                <label style="cursor: pointer;">
+                    <input type="radio" name="aura" value="purple" checked style="display: none;">
+                    <div class="aura-circle" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #c084fc, #8b5cf6); border: 2px solid transparent;"></div>
+                </label>
+                <label style="cursor: pointer;">
+                    <input type="radio" name="aura" value="emerald" style="display: none;">
+                    <div class="aura-circle" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #34d399, #10b981); border: 2px solid transparent;"></div>
+                </label>
+                <label style="cursor: pointer;">
+                    <input type="radio" name="aura" value="rose" style="display: none;">
+                    <div class="aura-circle" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #fb7185, #f43f5e); border: 2px solid transparent;"></div>
+                </label>
+                <label style="cursor: pointer;">
+                    <input type="radio" name="aura" value="cyan" style="display: none;">
+                    <div class="aura-circle" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #22d3ee, #06b6d4); border: 2px solid transparent;"></div>
+                </label>
+            </div>
+            <style>
+                /* Highlight the selected aura */
+                input[type="radio"]:checked + .aura-circle {
+                    border: 2px solid white;
+                    box-shadow: 0 0 15px rgba(255,255,255,0.5);
+                }
+            </style>
+        </div>
+
+        <div class="modes-grid">
+            {% for mode in modes %}
+            <label class="mode-card" style="--theme-color: var(--color-{{ mode.theme_color }});">
+                <input type="radio" name="mode_id" value="{{ mode.id }}" required>
+                <div class="card-content">
+                    <h3>{{ mode.name }}</h3>
+                    <p>{{ mode.description }}</p>
+                </div>
+            </label>
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="btn-primary mt-4">Create Room</button>
+    </form>
+</div>
+{% endblock %}

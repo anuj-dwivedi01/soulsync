@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<div class="results-container" style="max-width: 800px; margin: 0 auto; padding-bottom: 3rem;">
+    
+    <div class="header text-center" style="margin-bottom: 3rem;">
+        <h1 class="brand-title" style="font-size: 2.5rem;">Connection Analysis</h1>
+        <p style="color: #a1a1aa; font-size: 1.1rem;">Based on your psychological responses.</p>
+    </div>
+
+    <div class="glass-panel text-center" style="padding: 3rem; border-radius: 24px; background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.2); box-shadow: 0 0 40px rgba(139, 92, 246, 0.1); margin-bottom: 2rem; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 200px; background: var(--color-purple); filter: blur(100px); opacity: 0.3; z-index: -1;"></div>
+        <h3 style="color: white; margin-bottom: 1rem; font-weight: 400;">Compatibility Score</h3>
+        <div class="score-display" style="font-size: 5rem; font-weight: 800; background: linear-gradient(to right, #c084fc, #8b5cf6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+        </div>
+        <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem; font-size: 1.2rem;">
+            <span style="color: #a1a1aa;">{{ users[0].name }}</span>
+            <span style="color: var(--color-purple);">+</span>
+            <span style="color: #a1a1aa;">{{ users[1].name }}</span>
+        </div>
+    </div>
+
+    <h3 style="margin-bottom: 1.5rem; font-size: 1.4rem;">Psychological Dimensions</h3>
+    <div class="dimensions-grid" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 3rem;">
+        {% for dimension, value in dimensions.items() %}
+        <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; background: var(--glass-bg); border: 1px solid var(--glass-border);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.8rem;">
+                <span style="font-weight: 600;">{{ dimension }}</span>
+                <span style="color: var(--color-emerald);">{{ value }}%</span>
+            </div>
+            <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden;">
+                <div style="width: {{ value }}%; height: 100%; background: linear-gradient(90deg, var(--color-emerald), var(--color-teal)); border-radius: 10px;"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <h3 style="margin-bottom: 1.5rem; font-size: 1.4rem;">Connection Topography</h3>
+    <div class="glass-panel" style="padding: 2rem; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--glass-bg); margin-bottom: 3rem; box-shadow: inset 0 0 20px rgba(0,0,0,0.2);">
+        <div style="position: relative; height: 350px; width: 100%; display: flex; justify-content: center;">
+            <canvas id="connectionRadar"></canvas>
+        </div>
+    </div>
+
+    {% if suggested_dynamic %}
+    <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(6, 182, 212, 0.3); background: rgba(6, 182, 212, 0.05); margin-bottom: 3rem; text-align: left; display: flex; align-items: center; gap: 1.5rem;">
+        <div style="font-size: 2.5rem;">💡</div>
+        <div>
+            <h4 style="color: var(--color-cyan); margin-bottom: 0.3rem; font-weight: 600;">Hidden Dynamic Detected</h4>
+            <p style="color: #d1d5db; font-size: 0.95rem; margin: 0;">
+                While your current alignment has areas to grow, your personality dimensions strongly match as <strong style="color: white;">{{ suggested_dynamic }}</strong>.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <h3 style="margin-bottom: 1.5rem; font-size: 1.4rem;">Individual Analysis</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; text-align: left;">
+        <div class="glass-panel" style="padding: 2rem; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--glass-bg);">
+            <h4 style="color: var(--color-purple); margin-bottom: 1.5rem; font-size: 1.2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
+                For {{ user_a_insights.name }}
+            </h4>
+            <strong style="color: var(--color-emerald); font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase;">Core Strength</strong>
+            <p style="color: #d1d5db; font-size: 0.95rem; margin: 0.5rem 0 1.5rem 0;">
+                ✦ {{ user_a_insights.strengths[0] }}
+            </p>
+            <strong style="color: var(--color-rose); font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase;">Growth Area</strong>
+            <p style="color: #d1d5db; font-size: 0.95rem; margin: 0.5rem 0 0 0;">
+                ✦ {{ user_a_insights.advice[0] }}
+            </p>
+        </div>
+
+        <div class="glass-panel" style="padding: 2rem; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--glass-bg);">
+            <h4 style="color: var(--color-purple); margin-bottom: 1.5rem; font-size: 1.2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
+                For {{ user_b_insights.name }}
+            </h4>
+            <strong style="color: var(--color-emerald); font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase;">Core Strength</strong>
+            <p style="color: #d1d5db; font-size: 0.95rem; margin: 0.5rem 0 1.5rem 0;">
+                ✦ {{ user_b_insights.strengths[0] }}
+            </p>
+            <strong style="color: var(--color-rose); font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase;">Growth Area</strong>
+            <p style="color: #d1d5db; font-size: 0.95rem; margin: 0.5rem 0 0 0;">
+                ✦ {{ user_b_insights.advice[0] }}
+            </p>
+        </div>
+    </div>
+
+    <h3 style="margin-top: 3rem; margin-bottom: 1.5rem; font-size: 1.4rem;">Emotional Heatmap</h3>
+    <div class="glass-panel" style="padding: 2rem; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--glass-bg); margin-bottom: 3rem;">
+        <p style="color: #a1a1aa; font-size: 0.9rem; margin-bottom: 1.5rem;">A chronological mapping of your alignment across the questions. Brighter boxes indicate high synchronicity; darker boxes indicate emotional friction.</p>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
+            {% for intensity in heatmap_data %}
+                <div style="width: 30px; height: 30px; border-radius: 6px; background: var(--color-purple); opacity: {{ intensity }}; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 0 10px rgba(139, 92, 246, {{ intensity * 0.5 }});"></div>
+            {% endfor %}
+            {% if heatmap_data|length < 10 %}
+                {% for i in range(10 - heatmap_data|length) %}
+                    <div style="width: 30px; height: 30px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);"></div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem; text-align: left;">
+        
+        <div class="glass-panel" style="padding: 2rem; border-radius: 16px; border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05);">
+            <h4 style="color: var(--color-amber); margin-bottom: 1rem; font-size: 1.2rem; font-weight: 600;">👁️ Hidden Traits Detected</h4>
+            <ul style="list-style: none; padding: 0; color: #d1d5db; font-size: 0.95rem; display: flex; flex-direction: column; gap: 0.8rem;">
+                {% for trait in hidden_traits %}
+                    <li>{{ trait }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="glass-panel" style="padding: 2rem; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--glass-bg);">
+            <h4 style="color: white; margin-bottom: 1rem; font-size: 1.2rem; font-weight: 600;">👤 Core Personality</h4>
+            <strong style="color: var(--color-purple); font-size: 0.85rem; text-transform: uppercase;">{{ users[0].name }}</strong>
+            <p style="color: #a1a1aa; font-size: 0.9rem; margin: 0.3rem 0 1rem 0; line-height: 1.5;">
+                {{ user_a_summary }}
+            </p>
+            <strong style="color: var(--color-purple); font-size: 0.85rem; text-transform: uppercase;">{{ users[1].name }}</strong>
+            <p style="color: #a1a1aa; font-size: 0.9rem; margin: 0.3rem 0 0 0; line-height: 1.5;">
+                {{ user_b_summary }}
+            </p>
+        </div>
+    </div>
+
+    <div class="text-center">
+        <button id="downloadCardBtn" onclick="downloadShareCard()" class="btn-primary glow-effect" style="width: 100%; max-width: 300px; padding: 1.2rem; background: rgba(139, 92, 246, 0.2); border-color: var(--color-purple); cursor: pointer;">
+            Generate Share Card
+        </button>
+    </div>
+    <div class="glass-panel" style="padding: 2rem; border-radius: 16px; border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); margin-top: 3rem; margin-bottom: 3rem; text-align: center;">
+        <h4 style="color: white; margin-bottom: 0.5rem; font-size: 1.2rem; font-weight: 600;">☕ Support the Project</h4>
+        <p style="color: #a1a1aa; font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.5;">
+            SoulSync is built and maintained independently. If these insights helped you understand your dynamic better, consider leaving a tip to keep the servers running!
+        </p>
+        
+        <a href="upi://pay?pa=yourupi_id@bankname&pn=Anuj&cu=INR" 
+           class="btn-primary glow-effect" 
+           style="display: inline-block; padding: 0.8rem 2rem; background: linear-gradient(135deg, #10b981, #059669); border: none; text-decoration: none; color: white; font-weight: 600; border-radius: 50px;">
+            Support via UPI
+        </a>
+        
+        <p style="color: #6b7280; font-size: 0.8rem; margin-top: 1rem;">
+            Or send directly to UPI ID: <strong style="color: #9ca3af;">9326293961-2@ybl</strong>
+        </p>
+    </div>
+
+</div>
+
+<div style="position: absolute; left: -9999px; top: 0;">
+    <div id="viral-share-card" style="width: 1080px; height: 1920px; background: #0f0f13; position: relative; font-family: 'system-ui', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; text-align: center; box-sizing: border-box;">
+        
+        <div style="position: absolute; top: 20%; left: 10%; width: 600px; height: 600px; background: rgba(139, 92, 246, 0.4); filter: blur(200px); border-radius: 50%;"></div>
+        <div style="position: absolute; bottom: 10%; right: 10%; width: 600px; height: 600px; background: rgba(16, 185, 129, 0.2); filter: blur(200px); border-radius: 50%;"></div>
+
+        <div style="position: absolute; top: 8%; left: 0; width: 100%; text-align: center;">
+            <h2 style="color: white; font-size: 3.5rem; font-weight: 800; letter-spacing: 4px; margin: 0;">SOULSYNC</h2>
+            <p style="color: #a1a1aa; font-size: 1.8rem; margin-top: 0.5rem; text-transform: uppercase; letter-spacing: 2px;">Psychological Analysis</p>
+        </div>
+
+        <div style="z-index: 10; width: 100%; max-width: 900px; background: rgba(255, 255, 255, 0.03); border: 2px solid rgba(139, 92, 246, 0.3); border-radius: 40px; padding: 5rem 3rem; backdrop-filter: blur(20px);">
+            
+            <div style="display: inline-block; background: rgba(139, 92, 246, 0.2); border: 2px solid #8b5cf6; color: white; padding: 1rem 3rem; border-radius: 50px; font-size: 2rem; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 3rem;">
+                {{ room.mode.name }} Mode
+            </div>
+
+            <div style="display: flex; justify-content: center; align-items: center; gap: 2rem; font-size: 3.5rem; color: #d1d5db; margin-bottom: 2rem; font-weight: 500;">
+                <span>{{ users[0].name | title }}</span>
+                <span style="color: #8b5cf6;">+</span>
+                <span>{{ users[1].name | title }}</span>
+            </div>
+
+            <p style="color: #a1a1aa; font-size: 2rem; margin-bottom: 1rem;">Compatibility Score</p>
+            <div style="font-size: 14rem; font-weight: 900; line-height: 1; color: white; margin-bottom: 4rem; text-shadow: 0 0 40px rgba(139, 92, 246, 0.5);">
+                {{ score }}%
+            </div>
+
+            {% if suggested_dynamic %}
+            <div style="border-top: 2px solid rgba(255,255,255,0.1); padding-top: 3rem;">
+                <p style="color: #06b6d4; font-size: 1.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1rem;">Dynamic Detected</p>
+                <h3 style="color: white; font-size: 3.5rem; margin: 0; line-height: 1.2;">{{ suggested_dynamic }}</h3>
+            </div>
+            {% endif %}
+        </div>
+
+        <div style="position: absolute; bottom: 8%; left: 0; width: 100%; text-align: center;">
+            <p style="color: #a1a1aa; font-size: 2rem; margin-bottom: 0.5rem;">Who are you truly compatible with?</p>
+            <p style="color: white; font-size: 2.5rem; font-weight: 700; letter-spacing: 1px; margin: 0; background: rgba(255,255,255,0.1); display: inline-block; padding: 1rem 3rem; border-radius: 20px;">
+                soulsync.app 
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Animations
+    gsap.from(".results-container", {opacity: 0, y: 30, duration: 1, ease: "power3.out"});
+    gsap.from(".score-display", {scale: 0.5, opacity: 0, duration: 1.2, delay: 0.3, ease: "elastic.out(1, 0.5)"});
+
+    // Chart logic
+    const dimensionLabels = [
+        {% for dim in dimensions.keys() %}
+            "{{ dim }}",
+        {% endfor %}
+    ];
+    const dimensionData = [
+        {% for val in dimensions.values() %}
+            {{ val }},
+        {% endfor %}
+    ];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('connectionRadar').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: dimensionLabels,
+                datasets: [{
+                    label: 'Alignment Frequency',
+                    data: dimensionData,
+                    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                    borderColor: 'rgba(139, 92, 246, 0.8)',
+                    pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+                    pointBorderColor: '#ffffff',
+                    pointHoverBackgroundColor: '#ffffff',
+                    pointHoverBorderColor: 'rgba(16, 185, 129, 1)',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(255, 255, 255, 0.05)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        pointLabels: {
+                            color: '#d1d5db',
+                            font: { size: 13, family: 'system-ui, sans-serif' }
+                        },
+                        ticks: {
+                            display: false,
+                            min: 0,
+                            max: 100
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#c084fc',
+                        bodyColor: '#ffffff',
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw + '% Psychological Alignment';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    // Share Card Generation Logic
+    function downloadShareCard() {
+        const btn = document.getElementById('downloadCardBtn');
+        const originalText = btn.innerText;
+        btn.innerText = "Generating Card...";
+        btn.style.opacity = "0.7";
+
+        const cardElement = document.getElementById('viral-share-card');
+        
+        // Use html2canvas to take the snapshot
+        html2canvas(cardElement, {
+            scale: 1, // 1080x1920 is already high-res
+            backgroundColor: "#0f0f13",
+            logging: false,
+            useCORS: true
+        }).then(canvas => {
+            // Convert canvas to image data URL
+            const image = canvas.toDataURL("image/jpeg", 0.9);
+            
+            // Create a fake link to trigger the download
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = `SoulSync-Card.jpg`; // Created a cleaner dynamic filename
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Reset button
+            btn.innerText = originalText;
+            btn.style.opacity = "1";
+        }).catch(err => {
+            console.error("Error generating card:", err);
+            btn.innerText = "Error - Try Again";
+        });
+    }
+</script>
+{% endblock %}
