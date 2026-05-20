@@ -3,25 +3,15 @@
 {% block content %}
 <div class="session-container" style="max-width: 700px; margin: 0 auto; width: 100%;">
     
-    <div id="roundBanner" style="padding: 0.6rem; border-radius: 30px; margin-bottom: 1.5rem; font-size: 0.85rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; display: none; transition: all 0.4s ease;">
-        </div>
+    <div id="roundBanner" style="display: none;"></div>
 
-    <div class="top-bar" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-bottom: 2rem; color: #a1a1aa;">
+    <div class="top-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; color: #a1a1aa;">
         <span id="progressText" style="font-weight: 600; letter-spacing: 1px; text-align: left;">Loading...</span>
         
-        <div id="timerContainer" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.03); padding: 0.4rem 1rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
-            <span style="font-size: 0.85rem; color: #71717a;">TIME REMAINING:</span>
-            <span id="timerText" style="font-weight: 800; font-family: monospace; font-size: 1.2rem; color: var(--color-purple);">15</span>
-        </div>
-
-        <div class="sync-indicator" style="display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end;">
+        <div class="sync-indicator" style="display: flex; align-items: center; gap: 0.5rem;">
             <div style="width: 10px; height: 10px; background: var(--color-emerald); border-radius: 50%; box-shadow: 0 0 10px var(--color-emerald);"></div>
             <span style="font-size: 0.9rem;">Live Sync</span>
         </div>
-    </div>
-
-    <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 10px; margin-bottom: 2rem; overflow: hidden;">
-        <div id="timerBar" style="width: 100%; height: 100%; background: var(--color-purple); transition: width 1s linear;"></div>
     </div>
 
     <div class="glass-panel" id="questionCard" style="padding: 3rem 2rem; border-radius: 20px; border: 1px solid var(--glass-border); background: var(--glass-bg); backdrop-filter: blur(12px); text-align: center; opacity: 0; transform: translateY(10px);">
@@ -44,9 +34,6 @@
     const userId = "{{ user_id }}";
     
     let currentQuestionId = null;
-    let countdownInterval = null;
-    let timeLeft = 15;
-    const ROUND_DURATION = 15; // Set to 15 seconds per specification
 
     socket.on('connect', () => {
         socket.emit('request_question', { room_code: roomCode, user_id: userId });
@@ -54,7 +41,6 @@
 
     socket.on('new_question', (data) => {
         currentQuestionId = data.question_id;
-        clearInterval(countdownInterval); // Clear any lingering timers
         
         // 1. Update Progress Tracker Text & Reset Status
         document.getElementById('progressText').innerText = `QUESTION ${data.current_index} / ${data.total_questions}`;
@@ -78,10 +64,10 @@
             `;
         }
 
-        // Set the HTML once using the correct Python backend variable (data.question_text)
+        // Set the HTML once using the correct Python backend variable
         questionElement.innerHTML = instructionHTML + data.question_text;
 
-        // Hide the old banner outside the card since we moved it inside
+        // Hide the old external banner just in case
         document.getElementById('roundBanner').style.display = 'none';
 
         // 3. Populate Options Buttons
@@ -103,39 +89,11 @@
             container.appendChild(btn);
         });
 
-        // 4. Initialize Synchronized Timer
-        timeLeft = ROUND_DURATION;
-        updateTimerUI();
-        countdownInterval = setInterval(() => {
-            timeLeft--;
-            updateTimerUI();
-            if (timeLeft <= 0) {
-                clearInterval(countdownInterval);
-                handleTimeout(); // Force process timeout execution
-            }
-        }, 1000);
-
+        // Trigger the smooth animation for the new question
         gsap.to("#questionCard", { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" });
     });
 
-    function updateTimerUI() {
-        document.getElementById('timerText').innerText = timeLeft;
-        const percentage = (timeLeft / ROUND_DURATION) * 100;
-        const bar = document.getElementById('timerBar');
-        bar.style.width = `${percentage}%`;
-        
-        // Visual warning: change color to rose when running out of time
-        if (timeLeft <= 5) {
-            document.getElementById('timerText').style.color = "var(--color-rose)";
-            bar.style.background = "var(--color-rose)";
-        } else {
-            document.getElementById('timerText').style.color = "var(--color-purple)";
-            bar.style.background = "var(--color-purple)";
-        }
-    }
-
     function selectOption(clickedBtn, selectedAnswer) {
-        clearInterval(countdownInterval); // Stop timer immediately on interaction
         lockAllButtons();
 
         if (clickedBtn) {
@@ -153,20 +111,6 @@
             user_id: userId,
             question_id: currentQuestionId,
             answer: selectedAnswer
-        });
-    }
-
-    function handleTimeout() {
-        lockAllButtons();
-        document.getElementById('waitingStatus').style.display = 'block';
-        document.getElementById('waitingStatus').innerText = "⏱️ Time expired! Auto-submitting null baseline...";
-        document.getElementById('waitingStatus').style.color = "var(--color-rose)";
-
-        socket.emit('submit_answer', {
-            room_code: roomCode,
-            user_id: userId,
-            question_id: currentQuestionId,
-            answer: "TIMEOUT"
         });
     }
 
@@ -188,7 +132,6 @@
     });
 
     socket.on('test_complete', (data) => {
-        clearInterval(countdownInterval);
         document.getElementById('questionCard').innerHTML = `<h2 style="color: var(--color-emerald); font-size: 2rem;">${data.message}</h2><p style='margin-top:1rem;color:#a1a1aa;'>Compiling psychological report...</p>`;
         setTimeout(() => {
             window.location.href = `/results/${roomCode}?user_id=${userId}`;
