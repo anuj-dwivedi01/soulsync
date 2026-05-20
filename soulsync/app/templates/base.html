@@ -45,6 +45,23 @@
             color: #ffffff !important;
             font-weight: 600 !important;
         }
+        /* --- MOBILE RESPONSIVENESS FIXES --- */
+        @media (max-width: 768px) {
+            /* Reduce navbar padding so things don't collide */
+            nav {
+                padding: 1rem !important; 
+            }
+            /* Shrink the small top-left logo */
+            nav a h1 {
+                font-size: 1.4rem !important;
+            }
+            /* Shrink the translation dropdown so it fits nicely */
+            .goog-te-combo {
+                padding: 4px 8px !important;
+                font-size: 12px !important;
+                width: 130px !important;
+            }
+        }
     </style>
 </head>
 <body>
