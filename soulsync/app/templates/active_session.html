@@ -56,26 +56,33 @@
         currentQuestionId = data.question_id;
         clearInterval(countdownInterval); // Clear any lingering timers
         
-        // 1. Update Progress Tracker Text
+        // 1. Update Progress Tracker Text & Reset Status
         document.getElementById('progressText').innerText = `QUESTION ${data.current_index} / ${data.total_questions}`;
-        document.getElementById('questionText').innerText = data.question_text;
         document.getElementById('waitingStatus').style.display = 'none';
         
-        // 2. Handle Dynamic Round Atmosphere Shift
-        const banner = document.getElementById('roundBanner');
+        // 2. Inject the Glowing Instruction AND Question Text directly into the card
+        const questionElement = document.getElementById('questionText');
+        let instructionHTML = "";
+        
         if (data.question_type === 'prediction') {
-            banner.style.display = 'block';
-            banner.innerText = "🔮 PREDICTION ROUND: Predict your partner's actual behavior!";
-            banner.style.background = "rgba(139, 92, 246, 0.15)";
-            banner.style.color = "var(--color-purple)";
-            banner.style.border = "1px solid rgba(139, 92, 246, 0.3)";
+            instructionHTML = `
+                <div style="background: rgba(236, 72, 153, 0.2); border: 1px solid #ec4899; color: #fbcfe8; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 1.5rem; display: inline-block; box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);">
+                    🔮 Answer for your partner: What will THEY choose?
+                </div><br>
+            `;
         } else {
-            banner.style.display = 'block';
-            banner.innerText = "⚡ ALIGNMENT ROUND: Answer honestly based on your values.";
-            banner.style.background = "rgba(6, 182, 212, 0.15)";
-            banner.style.color = "var(--color-cyan)";
-            banner.style.border = "1px solid rgba(6, 182, 212, 0.3)";
+            instructionHTML = `
+                <div style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b989; color: #a7f3d0; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 1.5rem; display: inline-block;">
+                    ⚡ Answer for yourself: Be brutally honest.
+                </div><br>
+            `;
         }
+
+        // Set the HTML once using the correct Python backend variable (data.question_text)
+        questionElement.innerHTML = instructionHTML + data.question_text;
+
+        // Hide the old banner outside the card since we moved it inside
+        document.getElementById('roundBanner').style.display = 'none';
 
         // 3. Populate Options Buttons
         const container = document.getElementById('optionsContainer');
